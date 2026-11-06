@@ -1,6 +1,7 @@
 # dsh-backup-all
 
-> An all-in-one snapshot & restore plugin for **DSH (DeepSeek Harness)**: archive your installed plugins, Skills, MCP servers, Agent Presets, config, credentials and external data into one high-compression snapshot, then let AI compare and restore the whole environment.
+> **Snapshot everything. Keep a full backup of your own DSH environment.**
+> One click packs your entire DSH setup — plugins, Skills, MCP servers, Agent Presets, config, credentials and external data — into a restorable snapshot file. Before upgrades, before switching machines, before reinstalling the OS.
 
 [简体中文](README.md) | **English**
 
@@ -11,27 +12,53 @@
 
 ---
 
-## Why
+## What it is
 
-A long-lived DSH environment is scattered across many places: profile config, plugins in `node_modules`, local plugins under `dshbox-plugins`, Skills, MCP connections, Agent Presets, `.credentials.yaml`, external working directories… Manual backup is nearly impossible to get complete, and migration between machines or operating systems is error-prone.
+A long-lived DSH environment is scattered across many places: profile config, plugins in `node_modules`, local plugins under `dshbox-plugins`, Skills, MCP connections, Agent Presets, `.credentials.yaml`, external working directories. Manual backup is almost impossible to make complete.
 
-**dsh-backup-all turns the whole environment into a restorable snapshot**:
+**The point of dsh-backup-all is simple: snapshot everything and keep a backup for yourself.**
 
-- **Create**: the Host collects fixed configs, credentials and Skills; AI discovers external data that is actually referenced by the running environment and writes a restore plan plus `RESTORE.md`.
-- **Restore**: AI compares the snapshot with the current environment, applies files in batches (with safety backups), then reinstalls dependencies.
-- **Cross-OS**: Linux ↔ Windows compatible restore (config/data/credentials migrate; plugin code follows a policy).
+- It is **not** a migration-only tool — it is your **environment undo button**: save the full scene before changing anything;
+- On snapshot, the Host collects fixed configs, credentials and Skills; AI discovers external data that is actually referenced at runtime and writes a restore plan plus `RESTORE.md`;
+- On restore, AI compares the snapshot with the current environment, applies files in batches (with safety backups), then reinstalls dependencies;
+- It can also carry a snapshot to a new machine or OS — cross-OS compatible restore is an **extra capability**, not the main purpose.
+
+## When you would use it
+
+| Situation | How |
+|---|---|
+| Before upgrading DSH / changing plugins | Create a snapshot first; roll back if anything breaks |
+| Accidentally deleted config / Skills / local plugins | Restore the snapshot and get the full scene back |
+| Reinstalling the OS / moving to another machine | Create a snapshot, copy the `.backup.tar.br`, restore on the new machine |
+| Keeping an offline safety archive | Create snapshots regularly; each file is self-contained |
+| Just curious what is installed | `INVENTORY.md` / `RESTORE.md` / `manifest.json` inside the snapshot are complete inventories |
+
+## What gets backed up
+
+- **Profile config**: `package.json`, `cordis.yml`, `cordis.patch.yml`, `pnpm-lock.yaml`, etc.;
+- **Plugins**: registry plugins record their source (reinstalled on restore); local `file:`/`link:` plugins — the ones you cannot download again — can be packed in full;
+- **Skills / Agent Presets**: discovered entries and config;
+- **MCP connections**: connection definitions and related config;
+- **Credentials**: `.credentials.yaml` (can be excluded by policy);
+- **External data**: AI combines inventory and runtime references to include the directories/scripts you would actually need after restore (validated against safety rules).
+
+> The default policy is "local-only": plugins that can be re-downloaded are recorded by source and reinstalled; only locally-undownloadable plugin code is packed, keeping snapshots reasonably small.
+
+## How it works
+
+**Snapshot**: Host scans the environment (plugins / Skills / MCP / Presets / config / credentials) → AI decides which external data is worth including → writes a restore plan and `RESTORE.md` → packs everything into a tar + Brotli archive (usually ~10% of the original size). Progress is visible and the run is interruptible.
+
+**Restore (rollback)**: a pre-restore snapshot of the current environment is created automatically → AI compares the snapshot with the current state → applies files in batches (every overwritten file is backed up first) → reinstalls dependencies → restart DSH. Because of the pre-restore snapshot, **a rollback can itself be rolled back**.
 
 ## Features
 
-- **High-compression snapshots**: tar + Brotli (quality 11), typically ~10% of the original size.
-- **AI-driven**: a separately configured model (OpenAI-compatible or Anthropic) performs snapshot/restore through visible tool calls; runs are interruptible.
-- **Safety nets**: a pre-restore snapshot is created automatically; every overwritten file is backed up first.
-- **Cross-platform**: snapshot filenames carry the OS type (`...-linux.backup.tar.br` / `...-windows.backup.tar.br`); four scenarios:
-  - Linux → Linux / Windows → Windows: full restore;
-  - Linux → Windows / Windows → Linux: compatible restore (symlinks skipped, registry plugins reinstalled from source, external paths fall back, old-machine absolute `link:` deps removed).
-- **Optional pure-JS plugin-code migration** (v1.3.0, experimental): locally undownloadable plugins may be migrated across OSes when they are proven pure JS; plugins with native binaries/platform constraints are skipped with a clear reason.
-- **Import / export snapshots** from the UI.
-- **Polished UI**: a dedicated "Backup ALL" settings section, Windows-blue / Linux-orange / legacy-gray OS badges, floating progress ball, mobile layout.
+- High-compression snapshots (tar + Brotli quality 11) with `manifest.json` / `INVENTORY.md` / `RESTORE.md`;
+- AI-driven snapshot and restore using a separately configurable model (OpenAI-compatible / Anthropic), with visible, interruptible tool calls;
+- Double safety net: pre-restore snapshot + per-file safety backups;
+- A dedicated "Backup ALL" settings page (list / archived / advanced), floating progress ball, mobile layout;
+- Per-card **export**; any `.backup.tar.br` can be brought back via **import**;
+- Snapshot filenames carry the OS type (`...-linux.backup.tar.br` / `...-windows.backup.tar.br`), and restore picks the strategy automatically;
+- **Extra capability: cross-OS compatible restore** for moving Linux ↔ Windows (config/data/credentials migrate; plugin code follows a policy, skipped by default; optional experimental pure-JS migration). Native plugins and system-specific parts must be rebuilt on the target OS.
 
 <table>
 <tr>
@@ -48,15 +75,17 @@ A long-lived DSH environment is scattered across many places: profile config, pl
 
 Requirements: DSH `0.2.1-rc.5` (or compatible), Node.js >= 22, pnpm (provided by DSH plugin management).
 
-### From GitHub (recommended)
-
 ```bash
+# From GitHub (recommended)
 dsh plugin --profile web add github:luotianhao21/dsh-backup-all
+
+# From npm (after the npm package is published)
+dsh plugin --profile web add dsh-backup-all
 ```
 
-Restart DSH, check **Settings → Plugins** that `dsh-backup-all` is enabled; a **Backup ALL** section appears in Settings.
+Restart DSH; check **Settings → Plugins** that `dsh-backup-all` is enabled — a **Backup ALL** section appears in Settings.
 
-### From a local checkout
+From a local checkout:
 
 ```bash
 git clone https://github.com/luotianhao21/dsh-backup-all.git
@@ -64,17 +93,13 @@ cd dsh-backup-all
 dsh plugin --profile web add link:"$PWD"
 ```
 
-### From a release archive
+## Quick start (backup → rollback)
 
-Download a source archive from [Releases](https://github.com/luotianhao21/dsh-backup-all/releases), extract it, then install it with `link:` as above.
-
-## Quick start
-
-1. **Settings → Backup ALL → Advanced**, configure the AI model (Base URL / API Key / Model ID, OpenAI-compatible or Anthropic), then click "Test connection".
-2. (Optional) choose the snapshot policy: plugin-code packing scope, whether to exclude credentials, and the cross-OS plugin-code strategy.
-3. On the **Snapshots** page click **Create snapshot**, confirm the two-step dialog, and wait for the run to finish.
-4. To restore, click **Restore** on a snapshot card; a pre-restore snapshot is created automatically.
-5. Moving machines? Copy the `.backup.tar.br` file and use **Import snapshot**.
+1. **Settings → Backup ALL → Advanced**: configure the AI model (Base URL / API Key / Model ID) and test the connection;
+2. (Optional) snapshot policy: plugin-code packing scope and whether to exclude credentials;
+3. On the **Snapshots** page click **Create snapshot** and confirm — that is your environment archive;
+4. To roll back, click **Restore** on the snapshot card; a pre-restore snapshot is created automatically;
+5. To keep it offline, click **Export** and store the `.backup.tar.br` somewhere safe; bring it back with **Import snapshot** when needed.
 
 ### Snapshot policy
 
@@ -82,31 +107,29 @@ Download a source archive from [Releases](https://github.com/luotianhao21/dsh-ba
 |---|---|---|
 | Plugin code | local-only | `local-only` / `all` / `none` |
 | Exclude credentials | off | When on, `.credentials.yaml` is not packed |
-| Cross-OS plugin code | skip | `skip` / `js` (experimental pure-JS migration) |
+| Cross-OS plugin code | skip | `skip` / `js` (cross-OS only, experimental pure-JS migration) |
 
-### Cross-OS compatibility matrix
+### Restore strategy (chosen from snapshot OS → current OS)
 
 | Snapshot OS → current OS | Strategy | Behavior |
 |---|---|---|
-| Linux → Linux | Full restore | All entries + dependency reinstall |
-| Windows → Windows | Full restore (Windows semantics) | junction/symlink fallback, ACL, PowerShell/cmd |
-| Linux → Windows | Compatible restore | Config/data/credentials; plugin code skipped by default; symlinks skipped; registry plugins reinstalled; external paths fall back |
-| Windows → Linux | Compatible restore | Symmetric to the above |
+| Same OS | Full restore | All entries + dependency reinstall (the usual rollback path) |
+| Cross OS | Compatible restore | Config/data/credentials migrate; plugin code skipped by default; symlinks skipped; registry plugins reinstalled; external paths fall back |
 
-> Cross-OS restore is **compatible restore**, not a byte-for-byte mirror. Native plugins, system services and registry-related content must be rebuilt on the target OS. With "migrate pure JS plugin code" enabled, the Host only writes plugin-code directories that pass a conservative pure-JS check (no `.node/.dll/.exe`, `package.json` `os`/`cpu` match, no `gypfile`, size/file limits); everything else is skipped and listed in the summary.
+> Cross-OS is **compatible restore**, not a byte-for-byte mirror; native plugins, system services and registry-related content must be rebuilt on the target. Same-OS restore is the main design path of this plugin.
 
 ## Security
 
-- Snapshots may contain plaintext credentials (`.credentials.yaml`); treat snapshot files as sensitive and never publish them.
-- Overwritten files are backed up before writing; a pre-restore snapshot is created automatically.
-- AI prompts contain environment summaries, not plaintext credentials.
+- Snapshots may contain plaintext credentials (`.credentials.yaml`); treat snapshot files as sensitive;
+- Overwritten files are backed up before writing; a pre-restore snapshot is created automatically;
+- AI prompts contain environment summaries, not plaintext credentials;
 - Rotate API keys and other secrets after restoring/migrating.
 
 ## Project layout
 
 ```
 dsh-backup-all/
-├── index.js            # Host plugin entry
+├── index.js            # Host plugin entry (routes / tools / UI slots)
 ├── client.js           # Web client (settings page / floating ball / dialogs)
 ├── cordis.patch.yml    # DSH bundle patch
 ├── lib/                # Host logic (archive / runner / tools / prompts / platform)
@@ -127,7 +150,7 @@ node --test test/*.test.mjs     # 81 tests
 ## Docs
 
 - [API contract](docs/API-CONTRACT.md)
-- [Platform strategies](docs/PLATFORM-STRATEGIES.md)
+- [Platform & restore strategies](docs/PLATFORM-STRATEGIES.md)
 - [UI spec](docs/UI-SPEC.md)
 - [Changelog](CHANGELOG.md)
 
@@ -135,4 +158,4 @@ node --test test/*.test.mjs     # 81 tests
 
 [MIT](LICENSE) © 2026 luotianhao21
 
-> Independently developed; not affiliated with DeepSeek. Evaluate snapshot/credential security risks before use.
+> Independently developed; not affiliated with DeepSeek. Snapshots contain environment information — evaluate storage and credential security before use.

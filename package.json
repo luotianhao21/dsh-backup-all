@@ -1,7 +1,7 @@
 {
   "name": "dsh-backup-all",
   "version": "1.3.0",
-  "description": "Backup ALL: AI-driven snapshot & restore for DSH plugins, Skills, MCP servers, Agent Presets and external data (high-compression archives).",
+  "description": "Snapshot everything in your DSH environment: one-click full backup and rollback of plugins, Skills, MCP servers, Agent Presets, config, credentials and external data.",
   "type": "module",
   "license": "MIT",
   "author": "luotianhao21",
@@ -16,10 +16,11 @@
   "keywords": [
     "dsh",
     "dsh-plugin",
+    "deepseek-harness",
     "backup",
     "snapshot",
     "restore",
-    "deepseek-harness"
+    "disaster-recovery"
   ],
   "exports": {
     ".": "./index.js",
