@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Backup ALL",
+    "description": "为 DSH 的插件、Skill、MCP、Agent Preset 创建高压缩快照并支持 AI 恢复"
+  }
+}
