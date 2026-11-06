@@ -5,6 +5,7 @@
 
 [简体中文](README.md) | **English**
 
+[![npm](https://img.shields.io/npm/v/dsh-backup-all.svg)](https://www.npmjs.com/package/dsh-backup-all)
 [![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.5-6f42c1.svg)](https://github.com/deepseek-ai)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22-339933.svg)](https://nodejs.org)
@@ -76,14 +77,14 @@ A long-lived DSH environment is scattered across many places: profile config, pl
 Requirements: DSH `0.2.1-rc.5` (or compatible), Node.js >= 22, pnpm (provided by DSH plugin management).
 
 ```bash
-# From GitHub (recommended)
-dsh plugin --profile web add github:luotianhao21/dsh-backup-all
-
-# From npm (after the npm package is published)
+# From npm (recommended)
 dsh plugin --profile web add dsh-backup-all
+
+# Or from GitHub
+dsh plugin --profile web add github:luotianhao21/dsh-backup-all
 ```
 
-Restart DSH; check **Settings → Plugins** that `dsh-backup-all` is enabled — a **Backup ALL** section appears in Settings.
+npm page: <https://www.npmjs.com/package/dsh-backup-all>. Restart DSH; check **Settings → Plugins** that `dsh-backup-all` is enabled — a **Backup ALL** section appears in Settings.
 
 From a local checkout:
 

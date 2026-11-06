@@ -5,6 +5,7 @@
 
 **简体中文** | [English](README.en.md)
 
+[![npm](https://img.shields.io/npm/v/dsh-backup-all.svg)](https://www.npmjs.com/package/dsh-backup-all)
 [![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](CHANGELOG.md)
 [![DSH](https://img.shields.io/badge/DSH-0.2.1--rc.5-6f42c1.svg)](https://github.com/deepseek-ai)
 [![Node](https://img.shields.io/badge/Node-%3E%3D22-339933.svg)](https://nodejs.org)
@@ -76,11 +77,11 @@ DSH 用久了，环境会散落在很多地方：profile 配置、`node_modules`
 前置：DSH `0.2.1-rc.5`（或兼容版本）、Node.js >= 22、pnpm（DSH 插件管理自带）。
 
 ```bash
-# 从 GitHub 安装（推荐）
-dsh plugin --profile web add github:luotianhao21/dsh-backup-all
-
-# npm 发布后（见 npm 包页）
+# 从 npm 安装（推荐）
 dsh plugin --profile web add dsh-backup-all
+
+# 或从 GitHub 安装
+dsh plugin --profile web add github:luotianhao21/dsh-backup-all
 ```
 
 重启 DSH；打开 **设置 → 插件** 确认 `dsh-backup-all` 已启用，设置侧栏会出现 **Backup ALL**。
